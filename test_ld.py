@@ -1,13 +1,13 @@
 import cv2
 import numpy as np
-
+import time
 
 def gen_endpoints(img, slopes_intercepts):
     imshape = img.shape
 
     if None not in slopes_intercepts:
         neg_points = [0, np.int(slopes_intercepts[0][0] * 0 + slopes_intercepts[0][1]), np.int(imshape[1] * 0.45),
-                      np.int(slopes_intercepts[0][0] * np.int(imshape[1] * 0.45) + slopes_intercepts[0][1])]
+                      np.int(slopes_intercepts[0][0] * np.int(imshape[1] * 0.46) + slopes_intercepts[0][1])]
         pos_points = [np.int(imshape[1] * 0.55),
                       np.int(slopes_intercepts[1][0] * imshape[1] * 0.55 + slopes_intercepts[1][1]), imshape[1],
                       np.int(slopes_intercepts[1][0] * imshape[1] + slopes_intercepts[1][1])]
@@ -79,12 +79,27 @@ def avg_lines(lines):
 
 def gen_lane_lines(img, endpoints, color=[0, 255, 0], thickness=7):
     line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8)
-
+    poly_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8)
+    print endpoints
     ## obtain slopes, intercepts, and endpoints of the weighted average line segments
     if endpoints is not None:
         for line in endpoints:
             ## draw lane lines
             cv2.line(line_img, (line[0], line[1]), (line[2], line[3]), color, thickness)
+            # cv2.fillConvexPoly(poly_img, poly_points, color)
+
+        for i in range(len(endpoints) - 1):
+            point1 = [endpoints[0][0], endpoints[0][1]]
+            point2 = [endpoints[0][2], endpoints[0][3]]
+            point3 = [endpoints[1][0], endpoints[1][1]]
+            point4 = [endpoints[1][2], endpoints[1][3]]
+
+            poly_points = np.array([point1, point2, point3, point4, point1], np.int32)
+            print "line1=", endpoints[0]
+            print "line2=", endpoints[1]
+            cv2.fillConvexPoly(line_img, poly_points, color)
+
+    cv2.imshow('poly_img', poly_img)
 
     return line_img
 
@@ -118,15 +133,14 @@ def color_selection(image):
     return cv2.bitwise_and(image, image, mask=combined_color_images)
 
 
-cap = cv2.VideoCapture('mp4/challenge.mp4')
+cap = cv2.VideoCapture('mp4/time_lapse.mp4')
 prev_lane_lines = []
 
 while cap.isOpened():
     # Capture frame-by-frame
     ret, frame = cap.read()
+    # frame=frame[300:900,:]
     shape = frame.shape
-    # cv2.imshow('video', frame)
-    # gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 
     # Our operations on the frame come here
     image = color_selection(frame)
@@ -169,5 +183,7 @@ while cap.isOpened():
     # print lane_lines
     # cv2.imshow('lane_lines', lane_lines)
     cv2.imshow('lanes', final_img)
+    cv2.imshow('orig', frame)
+    time.sleep(0.5)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
