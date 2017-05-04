@@ -4,7 +4,7 @@ import ImageProcessor as ip
 import time
 import numpy as np
 
-cap = cv2.VideoCapture('mp4/dash_cam1.mp4')
+cap = cv2.VideoCapture('mp4/challenge.mp4')
 cached_lane_lines = []
 count = 0
 while cap.isOpened():
@@ -14,7 +14,7 @@ while cap.isOpened():
 
     # Our operations on the frame come here
     HSL_img = ip.enhanceLaneColor(frame)
-    cv2.imshow('hsl',HSL_img)
+    # cv2.imshow('hsl',HSL_img)
     gaussian_img = ip.applyGaussian(HSL_img, k=5, sigma=1)
     canny_img = ip.applyCanny(gaussian_img, threshold1=50, threshold2=100, aperture=3)
 

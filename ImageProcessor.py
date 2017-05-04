@@ -16,13 +16,12 @@ def region_of_interest(img):
 
 
 def enhanceLaneColor(image):
-    HSL_img=image
-    # convert image to HSL format (Hue, Saturation, Lightness
-    # HSL_img = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)
-    # cv2.imshow('hsl',HSL_img)
+    # convert image to HSL format (Hue, Saturation, Lightness)
+    HSL_img = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)
+    # cv2.imshow('hsl', HSL_img)
 
     # Keep only intensities falling in the white color range
-    white_enhanced_img = cv2.inRange(HSL_img, np.uint8([135,135,135]),
+    white_enhanced_img = cv2.inRange(HSL_img, np.uint8([135, 135, 135]),
                                      np.uint8([255, 255, 255]))
     # Keep only intensities falling in the yellow color range
     yellow_enhanced_img = cv2.inRange(HSL_img, np.uint8([10, 50, 100]), np.uint8([180, 255, 255]))
