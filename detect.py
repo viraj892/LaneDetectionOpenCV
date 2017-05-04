@@ -46,7 +46,7 @@ def vanishing_point(lines, max_len = 0):
     return v_pts
 
 
-cap = cv2.VideoCapture('mp4/solidWhiteRight.mp4')
+cap = cv2.VideoCapture('mp4/MAH00125.mp4')
 filter_angle = 13
 
 while (cap.isOpened()):

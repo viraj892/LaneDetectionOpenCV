@@ -2,15 +2,40 @@ import cv2
 import numpy as np
 
 
-def getLanePoints(img, slopes_intercepts):
+def applyHoughP(img, rho=2, theta=np.pi / 180, threshold=170, min_line_length=50, max_line_gap=20):
+    return cv2.HoughLinesP(img, rho, theta, threshold, min_line_length, max_line_gap)
+
+
+def filterHoughLines(lines):
+    alllines = []
+    # nodetect = []
+    if lines is not None:
+        for line in lines:
+            if line is not None:
+                alllines.append(line)
+    else:
+        print "No lines detected"
+        # nodetect.append(frame)
+
+    # for i in range(len(nodetect)):
+    #     count = count + 1
+    #     name = "nodetect" + str(count) + ".jpg"
+    #     print name
+    #     cv2.imwrite(name, nodetect[i])
+    # print alllines
+
+    return alllines
+
+
+def getLanePoints(img, lane_lines):
     imshape = img.shape
 
-    if None not in slopes_intercepts:
-        neg_points = [0, np.int(slopes_intercepts[0][0] * 0 + slopes_intercepts[0][1]), np.int(imshape[1] * 0.45),
-                      np.int(slopes_intercepts[0][0] * np.int(imshape[1] * 0.46) + slopes_intercepts[0][1])]
+    if None not in lane_lines:
+        neg_points = [0, np.int(lane_lines[0][0] * 0 + lane_lines[0][1]), np.int(imshape[1] * 0.45),
+                      np.int(lane_lines[0][0] * np.int(imshape[1] * 0.46) + lane_lines[0][1])]
         pos_points = [np.int(imshape[1] * 0.55),
-                      np.int(slopes_intercepts[1][0] * imshape[1] * 0.55 + slopes_intercepts[1][1]), imshape[1],
-                      np.int(slopes_intercepts[1][0] * imshape[1] + slopes_intercepts[1][1])]
+                      np.int(lane_lines[1][0] * imshape[1] * 0.55 + lane_lines[1][1]), imshape[1],
+                      np.int(lane_lines[1][0] * imshape[1] + lane_lines[1][1])]
     else:
         return None
 
@@ -18,8 +43,9 @@ def getLanePoints(img, slopes_intercepts):
 
 
 # just keep the observations with slopes with 1.5 std dev
-def filterAveragedLine(obs):
-    return np.array(abs(obs - np.mean(obs)) < 7.0 * np.std(obs))
+def filterAveragedLine(slope):
+    delta = abs(slope - np.mean(slope))
+    return np.array(delta < 1.5 * np.std(slope))
 
 
 # calc average of lines
@@ -30,44 +56,45 @@ def getAveragedLane(lines):
     # calculate slopes for each line to identify the positive and negative lines
     for line in lines:
         for x1, y1, x2, y2 in line:
-            slope = float(float(y2 - y1) / float(x2 - x1))
-            # a = y2 - y1
-            # b = x2 - x1
-            # print float(float(a)/float(b))
-            intercept = y1 - slope * x1
-            line_length = np.sqrt((y2 - y1) ** 2 + (x2 - x1) ** 2)
-            if slope < 0:
-                neg = np.append(neg, np.array([[slope, intercept, line_length]]), axis=0)
-            elif slope > 0:
-                pos = np.append(pos, np.array([[slope, intercept, line_length]]), axis=0)
+            a = float(y2 - y1)
+            b = float(x2 - x1)
+            m = float(a / b)  # slope
+            c = y1 - m * x1  # intercept
+            line_len = np.sqrt((y2 - y1) ** 2 + (x2 - x1) ** 2)
 
+            # identify the right and left lane lines based on slope value
+            if m < 0:
+                line_params = np.array([[m, c, line_len]])
+                neg = np.append(neg, line_params, axis=0)
+            elif m > 0:
+                line_params = np.array([[m, c, line_len]])
+                pos = np.append(pos, line_params, axis=0)
+
+    # normalize the right and left lines
     neg = neg[filterAveragedLine(neg[:, 0])]
     pos = pos[filterAveragedLine(pos[:, 0])]
 
     # weighted average of the slopes and intercepts based on the length of the line segment
     if len(neg[1:, 2]) > 0:
-        neg_lines = np.dot(neg[1:, 2], neg[1:, :2]) / np.sum(neg[1:, 2])
+        left_neg_line = np.dot(neg[1:, 2], neg[1:, :2]) / np.sum(neg[1:, 2])
     else:
-        neg_lines = None
+        left_neg_line = None
 
     if len(pos[1:, 2]) > 0:
-        pos_lines = np.dot(pos[1:, 2], pos[1:, :2]) / np.sum(pos[1:, 2])
+        right_pos_lines = np.dot(pos[1:, 2], pos[1:, :2]) / np.sum(pos[1:, 2])
     else:
-        pos_lines = None
+        right_pos_lines = None
 
-    return neg_lines, pos_lines
+    return left_neg_line, right_pos_lines
 
 
-def superImposeLaneOnFrame(img, endpoints, color=[0, 255, 0], thickness=7):
+def superimpose_lane_on_frame(img, endpoints, color=[51, 51, 255], thickness=7):
     line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8)
-    poly_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8)
-    print endpoints
-    ## obtain slopes, intercepts, and endpoints of the weighted average line segments
+    # obtain slopes, intercepts, and endpoints of the weighted average line segments
     if endpoints is not None:
         for line in endpoints:
             ## draw lane lines
             cv2.line(line_img, (line[0], line[1]), (line[2], line[3]), color, thickness)
-            # cv2.fillConvexPoly(poly_img, poly_points, color)
 
         for i in range(len(endpoints) - 1):
             point1 = [endpoints[0][0], endpoints[0][1]]
@@ -83,15 +110,15 @@ def superImposeLaneOnFrame(img, endpoints, color=[0, 255, 0], thickness=7):
     return line_img
 
 
-def getPreviousMeanLine(lane_lines, prev_lane_lines):
-    ## add the new lane line
+def getPreviousMeanLine(lane_lines, cached_lane_lines):
+    # add the new lane line
     if lane_lines is not None:
-        prev_lane_lines.append(lane_lines)
+        cached_lane_lines.append(lane_lines)
 
-    ## only keep the 10 most recent lane lines
-    if len(prev_lane_lines) >= 10:
-        prev_lane_lines.pop(0)
+    # only keep the 10 most recent lane lines
+    if len(cached_lane_lines) >= 10:
+        cached_lane_lines.pop(0)
 
     ## take the average of the past lane lines and the new ones
-    if len(prev_lane_lines) > 0:
-        return np.mean(prev_lane_lines, axis=0, dtype=np.int)
+    if len(cached_lane_lines) > 0:
+        return np.mean(cached_lane_lines, axis=0, dtype=np.int)
