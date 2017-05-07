@@ -93,7 +93,7 @@ def superimpose_lane_on_frame(img, endpoints, color=[51, 51, 255], thickness=7):
     # obtain slopes, intercepts, and endpoints of the weighted average line segments
     if endpoints is not None:
         for line in endpoints:
-            ## draw lane lines
+            # draw lane lines
             cv2.line(line_img, (line[0], line[1]), (line[2], line[3]), color, thickness)
 
         for i in range(len(endpoints) - 1):
@@ -103,8 +103,8 @@ def superimpose_lane_on_frame(img, endpoints, color=[51, 51, 255], thickness=7):
             point4 = [endpoints[1][2], endpoints[1][3]]
 
             poly_points = np.array([point1, point2, point3, point4, point1], np.int32)
-            print "line1=", endpoints[0]
-            print "line2=", endpoints[1]
+            # print "line1=", endpoints[0]
+            # print "line2=", endpoints[1]
             cv2.fillConvexPoly(line_img, poly_points, color)
 
     return line_img
@@ -119,6 +119,6 @@ def getPreviousMeanLine(lane_lines, cached_lane_lines):
     if len(cached_lane_lines) >= 10:
         cached_lane_lines.pop(0)
 
-    ## take the average of the past lane lines and the new ones
+    # take the average of the past lane lines and the new ones
     if len(cached_lane_lines) > 0:
         return np.mean(cached_lane_lines, axis=0, dtype=np.int)
