@@ -1,1 +1,4 @@
 .idea
+*.ini
+mp4/*
+avi/*

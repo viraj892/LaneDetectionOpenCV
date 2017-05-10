@@ -46,13 +46,12 @@ def vanishing_point(lines, max_len = 0):
     return v_pts
 
 
-cap = cv2.VideoCapture('mp4/solidWhiteRight.mp4')
+cap = cv2.VideoCapture('mp4/MAH00125.mp4')
 filter_angle = 13
 
 while (cap.isOpened()):
     # Capture frame-by-frame
     ret, frame = cap.read()
-
     # Our operations on the frame come here
     image = cv2.cvtColor(frame, cv2.COLOR_RGB2RGBA)
     gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
@@ -101,7 +100,6 @@ while (cap.isOpened()):
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-    sleep(0.2)
 
 # When everything done, release the capture
 cap.release()
