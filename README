@@ -1,2 +1,7 @@
 Lane Detection System
 Detect lanes of a road using Python OpenCV
+
+Requirements:
+Python 2.7x
+NumPy 1.10.0
+OpenCV 3.2.0
